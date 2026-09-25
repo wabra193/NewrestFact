@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Supplier Invoices EDI</title>
+<style>
+  :root{
+    --bg:#f3f4f5;
+    --panel:#ffffff;
+    --border:#e1e3e5;
+    --border-strong:#d3d6d9;
+    --text:#242628;
+    --text-soft:#5b6066;
+    --text-faint:#8b9096;
+    --accent-dark:#22262b;
+    --link:#b5651d;
+    --green:#2e7d32;
+    --red:#c0392b;
+    --orange:#c07a12;
+    --blue:#2f6fed;
+    --btn-green:#5a8f3c;
+    --row-alt:#fafbfb;
+  }
+  *{ box-sizing:border-box; }
+  body{ margin:0; font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; background:var(--bg); color:var(--text); font-size:13px; }
+  button{ font-family:inherit; cursor:pointer; }
+  input,select{ font-family:inherit; }
+  ::selection{ background:rgba(47,111,237,.2); }
+
+  .app{ display:flex; flex-direction:column; min-height:100vh; }
+  .tabbar{ background:var(--panel); border-bottom:1px solid var(--border); display:flex; align-items:center; padding:0 24px; flex-shrink:0; }
+  .tabs{ display:flex; gap:32px; }
+  .tab{ padding:14px 2px 12px; color:var(--text-soft); border-bottom:2px solid transparent; }
+  .tab.active{ font-weight:600; color:var(--text); border-bottom:2px solid var(--accent-dark); }
+
+  .body{ display:flex; flex-grow:1; align-items:flex-start; }
+
+  .sidebar{ width:224px; flex-shrink:0; background:var(--panel); border-right:1px solid var(--border); padding:16px 16px 24px; display:flex; flex-direction:column; gap:14px; }
+  .sidebar label.field-label{ font-size:12px; color:var(--text-soft); }
+  .sidebar input[type=text], .sidebar select{ width:100%; padding:7px 9px; border:1px solid var(--border-strong); border-radius:3px; font-size:12.5px; color:var(--text); background:#fff; }
+  .sidebar select{ appearance:none; padding-right:26px; }
+  .field-wrap{ position:relative; display:flex; flex-direction:column; gap:4px; }
+  .field-wrap svg.icon-suffix{ position:absolute; right:8px; top:29px; color:var(--text-faint); pointer-events:none; }
+  .side-static{ font-size:12.5px; color:var(--text-soft); padding:6px 9px; border:1px solid var(--border-strong); border-radius:3px; background:#fff; }
+  .side-section-title{ display:flex; align-items:center; justify-content:space-between; }
+  .side-section-title span{ font-weight:700; font-size:11.5px; letter-spacing:.04em; color:var(--text); }
+  .radio-row{ display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--text); cursor:pointer; }
+  .radio-row input{ accent-color:var(--accent-dark); }
+  .reset-link{ border:none; background:none; padding:0; font-size:12px; color:var(--blue); }
+  .hr{ height:1px; background:var(--border); margin:2px 0; }
+
+  .content{ flex-grow:1; padding:18px 24px; min-width:0; }
+
+  .header-row{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; gap:10px; flex-wrap:wrap; }
+  .header-title{ display:flex; align-items:center; gap:10px; }
+  .header-title h1{ margin:0; font-size:17px; font-weight:700; letter-spacing:.01em; color:var(--text); }
+  .badge-count{ background:var(--accent-dark); color:#fff; font-size:12px; font-weight:600; padding:2px 10px; border-radius:11px; }
+  .toolbar{ display:flex; align-items:center; gap:8px; }
+  .btn{ display:flex; align-items:center; gap:6px; background:#fff; border:1px solid var(--border-strong); color:var(--text-faint); padding:6px 12px; border-radius:4px; font-size:12.5px; }
+  .btn.select-all{ border-color:var(--accent-dark); color:var(--text); font-weight:600; }
+  .icon-btn{ background:#fff; border:1px solid var(--border-strong); color:var(--text-soft); width:30px; height:30px; border-radius:4px; display:flex; align-items:center; justify-content:center; }
+  .icon-btn.add{ background:var(--btn-green); border-color:var(--btn-green); color:#fff; }
+
+  .gen-bar{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; background:#fff; border:1px solid var(--border); border-radius:4px; padding:10px 14px; margin-bottom:12px; }
+  .gen-left{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .btn-primary{ display:flex; align-items:center; gap:6px; background:var(--blue); border:1px solid var(--blue); color:#fff; padding:7px 14px; border-radius:4px; font-size:12.5px; font-weight:600; }
+  .btn-ghost{ display:flex; align-items:center; gap:6px; background:#fff; border:1px solid var(--border-strong); color:var(--text-soft); padding:7px 14px; border-radius:4px; font-size:12.5px; }
+  .gen-note{ font-size:12px; color:var(--text-faint); }
+  .legend{ display:flex; align-items:center; gap:14px; font-size:11.5px; color:var(--text-soft); flex-wrap:wrap; }
+  .legend .dot{ display:flex; align-items:center; gap:5px; }
+  .legend .swatch{ width:8px; height:8px; border-radius:50%; display:inline-block; }
+
+  .table-card{ background:#fff; border:1px solid var(--border); border-radius:4px; overflow:hidden; }
+  .table-scroll{ overflow-x:auto; }
+  table{ width:100%; border-collapse:collapse; font-size:12.5px; min-width:1360px; }
+  thead tr{ background:#f6f7f8; border-bottom:1px solid var(--border); }
+  th{ text-align:left; padding:9px 8px; font-weight:600; color:var(--text-soft); }
+  th.num{ text-align:right; }
+  td{ padding:8px; }
+  tr.row{ border-bottom:1px solid var(--border); }
+  .empty-row td{ padding:28px; text-align:center; color:var(--text-faint); }
+
+  .pagination{ display:flex; align-items:center; justify-content:space-between; padding:10px 14px; border-top:1px solid var(--border); background:#f6f7f8; }
+  .page-btns{ display:flex; align-items:center; gap:4px; font-size:12.5px; color:var(--text-soft); }
+  .page-btn{ width:26px; height:26px; border:1px solid var(--border-strong); background:#fff; color:var(--text); border-radius:3px; }
+  .page-btn.active{ background:var(--accent-dark); color:#fff; font-weight:600; }
+  .page-btn.wide{ width:30px; }
+  .page-size{ position:relative; }
+  .page-size select{ padding:5px 22px 5px 10px; border:1px solid var(--border-strong); border-radius:3px; font-size:12.5px; color:var(--text); background:#fff; appearance:none; }
+  .page-size svg{ position:absolute; right:7px; top:8px; color:var(--text-faint); pointer-events:none; }
+
+  .status-cell{ font-weight:500; white-space:nowrap; }
+  .link{ color:var(--link); }
+  .nowrap{ white-space:nowrap; }
+  .num-cell{ text-align:right; white-space:nowrap; }
+  .row-trash{ background:none; border:none; padding:0; color:var(--text-faint); display:flex; }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.75"/></symbol>
+    <symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M3 3l18 18M10.6 10.6a3 3 0 0 0 4.2 4.2M6.5 6.7C3.9 8.3 2 12 2 12s4 7 11 7c2 0 3.7-.5 5.1-1.3M9.9 4.2A11.6 11.6 0 0 1 12 4c7 0 11 7 11 7a15.8 15.8 0 0 1-3 3.8" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><polyline points="4 7 6 7 20 7" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M18 7l-.8 12.2a2 2 0 0 1-2 1.8H8.8a2 2 0 0 1-2-1.8L6 7" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/><line x1="10" y1="11" x2="10" y2="16" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/><line x1="14" y1="11" x2="14" y2="16" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></symbol>
+    <symbol id="i-dots" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="19" cy="12" r="1.6" fill="currentColor"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+    <symbol id="i-dollar" viewBox="0 0 24 24"><line x1="12" y1="2" x2="12" y2="22" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/><path d="M17 6.5c0-1.9-2.2-3-5-3s-5 1.2-5 3c0 4.5 10 2.3 10 6.8 0 1.9-2.2 3.2-5 3.2s-5-1.3-5-3.2" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><polyline points="4 12.5 9.5 18 20 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-arrow-left" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><polyline points="11 5 4 12 11 19" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="1.6"/><line x1="8" y1="3" x2="8" y2="7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><line x1="16" y1="3" x2="16" y2="7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-flask" viewBox="0 0 24 24"><path d="M9 3h6M10 3v6.2L4.6 18a2 2 0 0 0 1.7 3h11.4a2 2 0 0 0 1.7-3L14 9.2V3" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/><line x1="7.5" y1="14" x2="16.5" y2="14" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16M3 21v-5h5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  </defs>
+</svg>
+
+<div class="app">
+
+  <div class="tabbar">
+    <div class="tabs">
+      <div class="tab active">Supplier invoices</div>
+      <div class="tab">Purchase orders</div>
+      <div class="tab">Customer invoices</div>
+      <div class="tab">Customer orders</div>
+    </div>
+  </div>
+
+  <div class="body">
+
+    <div class="sidebar">
+      <div class="side-section-title">
+        <span>SEARCH</span>
+        <button class="reset-link" id="resetBtn">Reset Filter</button>
+      </div>
+
+      <input type="text" value="WR Invoice">
+
+      <div class="field-wrap">
+        <label class="field-label">By supplier</label>
+        <select><option>SYSCO 2026 (EDI)</option></select>
+        <svg class="icon-suffix" width="14" height="14"><use href="#i-chevron"></use></svg>
+      </div>
+
+      <div class="field-wrap">
+        <label class="field-label">From</label>
+        <input type="text" value="11/04/2026">
+        <svg class="icon-suffix" width="14" height="14"><use href="#i-calendar"></use></svg>
+      </div>
+
+      <div class="field-wrap">
+        <label class="field-label">To</label>
+        <input type="text" value="11/05/2026">
+        <svg class="icon-suffix" width="14" height="14"><use href="#i-calendar"></use></svg>
+      </div>
+
+      <div class="hr"></div>
+
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <div class="side-section-title"><span>SITES</span><svg width="14" height="14" style="color:var(--text-faint);"><use href="#i-chevron"></use></svg></div>
+        <div class="side-static">514 of 514 selected</div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <div class="side-section-title"><span>STATUS</span><svg width="14" height="14" style="color:var(--text-faint);"><use href="#i-chevron"></use></svg></div>
+        <div class="side-static">17 of 17 selected</div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:2px;">
+        <label class="radio-row"><input type="radio" name="show" id="filterAll"> Show all</label>
+        <label class="radio-row"><input type="radio" name="show" id="filterSi"> Show SI only</label>
+        <label class="radio-row"><input type="radio" name="show" id="filterCn"> Show CN only</label>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <div class="header-row">
+        <div class="header-title">
+          <svg width="18" height="18" style="color:var(--text-soft);"><use href="#i-arrow-left"></use></svg>
+          <h1>SUPPLIER INVOICES EDI</h1>
+          <span class="badge-count" id="countBadge">0</span>
+        </div>
+        <div class="toolbar">
+          <button class="btn" id="unselectAllBtn">UnselectAll</button>
+          <button class="btn select-all" id="selectAllBtn"><svg width="13" height="13"><use href="#i-check"></use></svg>SelectAll</button>
+          <button class="icon-btn" aria-label="Hide"><svg width="15" height="15"><use href="#i-eye-off"></use></svg></button>
+          <button class="icon-btn" aria-label="Show"><svg width="15" height="15"><use href="#i-eye"></use></svg></button>
+          <button class="icon-btn" id="deleteSelectedBtn" aria-label="Delete selected"><svg width="15" height="15"><use href="#i-trash"></use></svg></button>
+          <button class="icon-btn" aria-label="More"><svg width="15" height="15"><use href="#i-dots"></use></svg></button>
+          <button class="icon-btn add" aria-label="Add"><svg width="15" height="15"><use href="#i-plus"></use></svg></button>
+        </div>
+      </div>
+
+      <div class="gen-bar">
+        <div class="gen-left">
+          <button class="btn-primary" id="generateBtn"><svg width="14" height="14"><use href="#i-flask"></use></svg>Générer des cas de test</button>
+          <button class="btn-ghost" id="resetDemoBtn"><svg width="14" height="14"><use href="#i-refresh"></use></svg>Réinitialiser</button>
+          <span class="gen-note" id="genNote"></span>
+        </div>
+        <div class="legend">
+          <span class="dot"><span class="swatch" style="background:#2e7d32"></span>Rien à faire</span>
+          <span class="dot"><span class="swatch" style="background:#c07a12"></span>Action à mener</span>
+          <span class="dot"><span class="swatch" style="background:#c0392b"></span>Alerte bloquante</span>
+          <span class="dot"><span class="swatch" style="background:#2f6fed"></span>À qualifier</span>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:28px;padding-left:12px;"><input type="checkbox" id="headerCheckbox" style="accent-color:var(--accent-dark);"></th>
+                <th style="width:22px;"></th>
+                <th>Id</th>
+                <th>Site code</th>
+                <th>Supplier</th>
+                <th>PO-Num<br>(EDI)</th>
+                <th>RN-Num<br>(WR)</th>
+                <th>CL-Num<br>(WR)</th>
+                <th>DON-RN/CL (WR)</th>
+                <th>DON-EDI</th>
+                <th>Type</th>
+                <th>Creation date</th>
+                <th>SI-Num (EDI)</th>
+                <th>Invoice date</th>
+                <th class="num">Amount w/o<br>VAT RN/CL</th>
+                <th class="num">Amount w/o<br>VAT EDI</th>
+                <th>Status</th>
+                <th style="width:26px;"></th>
+              </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+
+        <div class="pagination">
+          <div class="page-btns">
+            <button class="page-btn active">1</button>
+            <button class="page-btn">2</button>
+            <button class="page-btn">3</button>
+            <span style="padding:0 4px;color:var(--text-faint);">…</span>
+            <button class="page-btn wide">212</button>
+            <button class="page-btn wide">213</button>
+            <button class="page-btn" style="width:auto;padding:0 6px;">&gt;</button>
+            <button class="page-btn" style="width:auto;padding:0 6px;">&gt;&gt;</button>
+          </div>
+          <div class="page-size">
+            <select><option>8</option><option>20</option><option>50</option></select>
+            <svg width="12" height="12"><use href="#i-chevron"></use></svg>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  function seedRows() {
+    return [
+      { id: 1175075, site: 'TLS', supplier: 'SYSCO 2026 (EDI)', poNum: '—', rnNum: '1691741', clNum: '', donWr: 'DNCAS3A', donEdi: 'DNCAS3A', typeDisplay: 'SI', typeFilter: 'si', creationDate: '11/05/2026', siNum: 'EDISICAS3A', invoiceDate: '11/05/2026', amt1: '361.07', amt2: '360.99', status: 'Supplier invoice', colorHex: '#2e7d32', flagged: false, note: '' },
+      { id: 1175074, site: 'TLS', supplier: 'SYSCO 2026 (EDI)', poNum: '1827546', rnNum: '', clNum: '', donWr: 'DNCAS2A', donEdi: '', typeDisplay: '', typeFilter: 'si', creationDate: '11/05/2026', siNum: 'EDISICAS2A', invoiceDate: '11/05/2026', amt1: '', amt2: '360.99', status: 'No Receipt note', colorHex: '#c0392b', flagged: true, note: '' },
+      { id: 1175073, site: 'TLS', supplier: 'SYSCO 2026 (EDI)', poNum: '1827547', rnNum: '1691743', clNum: '', donWr: 'DNCAS1C', donEdi: 'DNCAS1C', typeDisplay: 'SI', typeFilter: 'si', creationDate: '11/05/2026', siNum: 'EDISICAS1C', invoiceDate: '11/05/2026', amt1: '361.07', amt2: '360.99', status: 'Supplier invoice', colorHex: '#2e7d32', flagged: false, note: '' },
+      { id: 1175072, site: 'TLS', supplier: 'SYSCO 2026 (EDI)', poNum: '1827545', rnNum: '1691740', clNum: '', donWr: 'DNCAS1B', donEdi: 'DNCAS1Z', typeDisplay: '', typeFilter: 'si', creationDate: '11/05/2026', siNum: 'EDISICAS1B', invoiceDate: '', amt1: '', amt2: '360.99', status: 'No Receipt note', colorHex: '#c0392b', flagged: true, note: '' },
+      { id: 1175071, site: 'TLS', supplier: 'SYSCO 2026 (EDI)', poNum: '1827544', rnNum: '1691739', clNum: '', donWr: 'DNCAS1A', donEdi: 'DNCAS1A', typeDisplay: 'SI', typeFilter: 'si', creationDate: '11/05/2026', siNum: 'EDISICAS1A', invoiceDate: '11/05/2026', amt1: '361.07', amt2: '360.99', status: 'Supplier invoice', colorHex: '#2e7d32', flagged: false, note: '' },
+      { id: 1174586, site: 'CE0400', supplier: 'SYSCO 2026 (EDI)', poNum: '1823432', rnNum: '1690676', clNum: '', donWr: '1253967176', donEdi: '1253967176', typeDisplay: 'SI', typeFilter: 'si', creationDate: '05/05/2026', siNum: 'EDI1253967176', invoiceDate: '04/05/2026', amt1: '303.02', amt2: '303.53', status: 'Supplier invoice', colorHex: '#2e7d32', flagged: false, note: '' },
+      { id: 1173943, site: 'CB0436', supplier: 'SYSCO 2026 (EDI)', poNum: '1821015', rnNum: '1689847', clNum: '', donWr: '1253966333', donEdi: '1253966333', typeDisplay: 'SI', typeFilter: 'si', creationDate: '04/05/2026', siNum: 'EDI1253966333', invoiceDate: '04/05/2026', amt1: '98.12', amt2: '98.12', status: 'Supplier invoice', colorHex: '#2e7d32', flagged: false, note: '' },
+      { id: 1173941, site: 'AE0668', supplier: 'SYSCO 2026 (EDI)', poNum: '1822181', rnNum: '1690690', clNum: '', donWr: '1253966741', donEdi: '1253966741', typeDisplay: 'SI', typeFilter: 'si', creationDate: '04/05/2026', siNum: 'EDI1253966741', invoiceDate: '04/05/2026', amt1: '976.44', amt2: '982.86', status: 'Supplier invoice', colorHex: '#2e7d32', flagged: false, note: '' }
+    ];
+  }
+
+  function buildCaseRows(batch) {
+    var base = 2000000 + batch * 100;
+    function mk(i, o) {
+      var row = { id: base + i, site: 'TLS', supplier: 'SYSCO 2026 (EDI)', creationDate: '12/05/2026', invoiceDate: '11/05/2026', isTest: true };
+      for (var k in o) { row[k] = o[k]; }
+      return row;
+    }
+    return [
+      mk(1, { caseLabel: 'Cas n°1 A', poNum: '1827544', rnNum: '1691739', clNum: '', donWr: 'DNCAS1A', donEdi: 'DNCAS1A', typeDisplay: 'SI', typeFilter: 'si', siNum: 'EDISICAS1A', amt1: '145.20', amt2: '145.20', status: 'Supplier invoice', colorHex: '#2e7d32', flagged: false, note: 'Cas n°1 A — RN, PO et DON identiques des deux côtés : rien à faire.' }),
+      mk(2, { caseLabel: 'Cas n°1 B', poNum: '1827545', rnNum: '1691740', clNum: '', donWr: 'DNCAS1B', donEdi: 'DNCAS1Z', typeDisplay: 'SI', typeFilter: 'si', siNum: 'EDISICAS1B', amt1: '210.00', amt2: '210.00', status: 'DN corrigé (via PO)', colorHex: '#c07a12', flagged: true, note: 'Cas n°1 B — Aucune RN trouvée avec «DNCAS1Z». PO 1827545 retrouvé et réceptionné : corriger le n° de DN sur la RN en recoupant via le n° de PO.' }),
+      mk(3, { caseLabel: 'Cas n°1 C', poNum: '1827599', rnNum: '1691743', clNum: '', donWr: 'DNCAS1C', donEdi: 'DNCAS1C', typeDisplay: 'SI', typeFilter: 'si', siNum: 'EDISICAS1C', amt1: '88.40', amt2: '88.40', status: 'Supplier invoice', colorHex: '#2e7d32', flagged: false, note: 'Cas n°1 C — Le DON matche malgré un écart sur le n° de PO (informatif) : rien à faire.' }),
+      mk(4, { caseLabel: 'Cas n°2 A', poNum: '1827546', rnNum: '', clNum: '', donWr: '', donEdi: 'DNCAS2A', typeDisplay: 'SI', typeFilter: 'si', siNum: 'EDISICAS2A', amt1: '', amt2: '396.10', status: 'Alerte donneur d’ordre', colorHex: '#c0392b', flagged: true, note: 'Cas n°2 A — Aucune RN trouvée ; PO 1827546 trouvé mais non réceptionné. Alerte par mail au donneur d’ordre et/ou au chef de secteur du site.' }),
+      mk(5, { caseLabel: 'Cas n°3 A', poNum: '', rnNum: '1691741', clNum: '', donWr: 'DNCAS3A', donEdi: 'DNCAS3A', typeDisplay: 'SI', typeFilter: 'si', siNum: 'EDISICAS3A', amt1: '302.75', amt2: '302.75', status: 'Supplier invoice', colorHex: '#2e7d32', flagged: false, note: 'Cas n°3 A — Rien à faire.' }),
+      mk(6, { caseLabel: 'Cas n°3 B', poNum: '', rnNum: '1691742', clNum: '', donWr: 'DNCAS3B', donEdi: 'DNCAS3Z', typeDisplay: 'SI', typeFilter: 'si', siNum: 'EDISICAS3B', amt1: '', amt2: '175.60', status: 'À rapprocher', colorHex: '#c07a12', flagged: true, note: 'Cas n°3 B — Aucune RN trouvée pour ce DON/fournisseur : proposer des rapprochements possibles (site / fournisseur / montant / DON proche).' }),
+      mk(7, { caseLabel: 'Cas n°4 A', poNum: '', rnNum: '', clNum: '', donWr: '', donEdi: 'DNCAS4A', typeDisplay: 'SI', typeFilter: 'si', siNum: 'EDISICAS4A', amt1: '', amt2: '640.00', status: 'Alerte responsable site', colorHex: '#c0392b', flagged: true, note: 'Cas n°4 A — Aucune RN trouvée dans Winrest, ni via la facture ni via le DON : alerte par mail au responsable du site.' }),
+      mk(8, { caseLabel: 'Cas n°5 A', poNum: '1827544', rnNum: '1691739', clNum: '', donWr: 'DNCAS1A', donEdi: 'DNCAS1A', typeDisplay: 'SI', typeFilter: 'si', siNum: 'EDISICAS5A', amt1: '410.00', amt2: '410.20', status: 'À qualifier (facturation)', colorHex: '#2f6fed', flagged: true, note: 'Cas n°5 A — Cette RN est déjà rattachée à une facture validée : à qualifier entre complément de facturation, double facturation ou refacturation fournisseur.' }),
+      mk(9, { caseLabel: 'Claim n°4', poNum: 'NA', rnNum: '', clNum: '719786', donWr: 'DNCAS1A', donEdi: 'DNCAS1147', typeDisplay: 'CN', typeFilter: 'cn', siNum: 'EDICNCAS1A', amt1: '-100.00', amt2: '-100.00', status: 'DON à corriger (claim)', colorHex: '#c07a12', flagged: true, note: 'Claim n°4 — Modifier le numéro de DON pour faire matcher la claim si le montant est identique.' }),
+      mk(10, { caseLabel: 'Claim n°5', poNum: 'NA', rnNum: '', clNum: '', donWr: 'CAS3BCLAIM', donEdi: 'DNCAS1C', typeDisplay: 'CN', typeFilter: 'cn', siNum: 'EDICNCAS1C', amt1: '-45.00', amt2: '-45.00', status: 'Claim fictive à créer', colorHex: '#c07a12', flagged: true, note: 'Claim n°5 — Créer une claim fictive en prenant un item «indéfini pour ajustement».' })
+    ];
+  }
+
+  var state = {
+    filter: 'all',
+    selected: {},
+    rows: seedRows(),
+    genCount: 0
+  };
+
+  function esc(v) {
+    if (v === undefined || v === null) return '';
+    return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function visibleRows() {
+    return state.rows.filter(function (r) {
+      return state.filter === 'all' || r.typeFilter === state.filter;
+    });
+  }
+
+  function render() {
+    var rows = visibleRows();
+    var body = document.getElementById('tableBody');
+    document.getElementById('countBadge').textContent = rows.length;
+
+    var allChecked = rows.length > 0 && rows.every(function (r) { return !!state.selected[r.id]; });
+    document.getElementById('headerCheckbox').checked = allChecked;
+    document.getElementById('filterAll').checked = state.filter === 'all';
+    document.getElementById('filterSi').checked = state.filter === 'si';
+    document.getElementById('filterCn').checked = state.filter === 'cn';
+
+    var selectedCount = Object.keys(state.selected).length;
+    document.getElementById('genNote').textContent =
+      state.genCount + ' lot(s) généré(s) — 10 cas Winrest / EDI par lot (Cas 1A à 5A + 2 claims), ' + selectedCount + ' sélectionnée(s)';
+
+    if (rows.length === 0) {
+      body.innerHTML = '<tr class="empty-row"><td colspan="18">Aucune facture ne correspond à ce filtre.</td></tr>';
+      return;
+    }
+
+    var html = '';
+    rows.forEach(function (r, i) {
+      var isSelected = !!state.selected[r.id];
+      var rowBg = isSelected ? '#eaf1ff' : (i % 2 === 1 ? '#fafbfb' : '#ffffff');
+      var amt1 = r.amt1 ? ('€ ' + r.amt1) : '';
+      var amt2 = r.amt2 ? ('€ ' + r.amt2) : '';
+      var dollarCell = r.flagged ? '' : '<svg width="13" height="13" style="color:var(--green)"><use href="#i-dollar"></use></svg>';
+      var trashCell = r.flagged ? '<button class="row-trash" data-action="remove" data-id="' + r.id + '" aria-label="Remove row"><svg width="13" height="13"><use href="#i-trash"></use></svg></button>' : '';
+
+      html += '<tr class="row" style="background:' + rowBg + '">' +
+        '<td style="padding-left:12px;"><input type="checkbox" data-action="toggle" data-id="' + r.id + '" ' + (isSelected ? 'checked' : '') + ' style="accent-color:var(--accent-dark);"></td>' +
+        '<td>' + dollarCell + '</td>' +
+        '<td class="nowrap" title="' + esc(r.caseLabel || '') + '">' + esc(r.id) + '</td>' +
+        '<td>' + esc(r.site) + '</td>' +
+        '<td class="nowrap">' + esc(r.supplier) + '</td>' +
+        '<td class="link">' + esc(r.poNum) + '</td>' +
+        '<td class="link">' + esc(r.rnNum) + '</td>' +
+        '<td class="link">' + esc(r.clNum) + '</td>' +
+        '<td class="link">' + esc(r.donWr) + '</td>' +
+        '<td>' + esc(r.donEdi) + '</td>' +
+        '<td>' + esc(r.typeDisplay) + '</td>' +
+        '<td class="nowrap">' + esc(r.creationDate) + '</td>' +
+        '<td class="link nowrap">' + esc(r.siNum) + '</td>' +
+        '<td class="nowrap">' + esc(r.invoiceDate) + '</td>' +
+        '<td class="num-cell">' + esc(amt1) + '</td>' +
+        '<td class="num-cell">' + esc(amt2) + '</td>' +
+        '<td class="status-cell" style="color:' + r.colorHex + '" title="' + esc(r.note || '') + '">' + esc(r.status) + '</td>' +
+        '<td>' + trashCell + '</td>' +
+        '</tr>';
+    });
+    body.innerHTML = html;
+  }
+
+  function toggleRow(id) {
+    if (state.selected[id]) { delete state.selected[id]; } else { state.selected[id] = true; }
+    render();
+  }
+
+  function removeRow(id) {
+    state.rows = state.rows.filter(function (r) { return r.id !== id; });
+    delete state.selected[id];
+    render();
+  }
+
+  function selectAllVisible() {
+    var sel = {};
+    visibleRows().forEach(function (r) { sel[r.id] = true; });
+    state.selected = sel;
+    render();
+  }
+
+  function unselectAll() {
+    state.selected = {};
+    render();
+  }
+
+  function deleteSelected() {
+    state.rows = state.rows.filter(function (r) { return !state.selected[r.id]; });
+    state.selected = {};
+    render();
+  }
+
+  function setFilter(f) {
+    state.filter = f;
+    state.selected = {};
+    render();
+  }
+
+  function generateCases() {
+    state.genCount += 1;
+    state.rows = state.rows.concat(buildCaseRows(state.genCount));
+    render();
+  }
+
+  function resetDemo() {
+    state.rows = seedRows();
+    state.selected = {};
+    state.filter = 'all';
+    state.genCount = 0;
+    render();
+  }
+
+  document.getElementById('unselectAllBtn').addEventListener('click', unselectAll);
+  document.getElementById('selectAllBtn').addEventListener('click', selectAllVisible);
+  document.getElementById('deleteSelectedBtn').addEventListener('click', deleteSelected);
+  document.getElementById('generateBtn').addEventListener('click', generateCases);
+  document.getElementById('resetDemoBtn').addEventListener('click', resetDemo);
+  document.getElementById('resetBtn').addEventListener('click', resetDemo);
+  document.getElementById('headerCheckbox').addEventListener('change', function () {
+    var rows = visibleRows();
+    var allChecked = rows.length > 0 && rows.every(function (r) { return !!state.selected[r.id]; });
+    if (allChecked) { unselectAll(); } else { selectAllVisible(); }
+  });
+  document.getElementById('filterAll').addEventListener('change', function () { setFilter('all'); });
+  document.getElementById('filterSi').addEventListener('change', function () { setFilter('si'); });
+  document.getElementById('filterCn').addEventListener('change', function () { setFilter('cn'); });
+
+  document.getElementById('tableBody').addEventListener('click', function (e) {
+    var el = e.target.closest('[data-action="remove"]');
+    if (el) { removeRow(Number(el.getAttribute('data-id'))); }
+  });
+  document.getElementById('tableBody').addEventListener('change', function (e) {
+    var el = e.target.closest('[data-action="toggle"]');
+    if (el) { toggleRow(Number(el.getAttribute('data-id'))); }
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
