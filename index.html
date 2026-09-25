@@ -73,7 +73,7 @@
 
   .table-card{ background:#fff; border:1px solid var(--border); border-radius:4px; overflow:hidden; }
   .table-scroll{ overflow-x:auto; }
-  table{ width:100%; border-collapse:collapse; font-size:12.5px; min-width:1360px; }
+  table{ width:100%; border-collapse:collapse; font-size:12.5px; min-width:1520px; }
   thead tr{ background:#f6f7f8; border-bottom:1px solid var(--border); }
   th{ text-align:left; padding:9px 8px; font-weight:600; color:var(--text-soft); }
   th.num{ text-align:right; }
@@ -91,6 +91,7 @@
   .page-size svg{ position:absolute; right:7px; top:8px; color:var(--text-faint); pointer-events:none; }
 
   .status-cell{ font-weight:500; white-space:nowrap; }
+  .status-detail{ font-size:11px; line-height:1.35; color:var(--text-faint); font-weight:400; white-space:normal; margin-top:3px; max-width:240px; }
   .link{ color:var(--link); }
   .nowrap{ white-space:nowrap; }
   .num-cell{ text-align:right; white-space:nowrap; }
@@ -228,7 +229,7 @@
                 <th>Invoice date</th>
                 <th class="num">Amount w/o<br>VAT RN/CL</th>
                 <th class="num">Amount w/o<br>VAT EDI</th>
-                <th>Status</th>
+                <th style="min-width:260px;">Status</th>
                 <th style="width:26px;"></th>
               </tr>
             </thead>
@@ -360,7 +361,7 @@
         '<td class="nowrap">' + esc(r.invoiceDate) + '</td>' +
         '<td class="num-cell">' + esc(amt1) + '</td>' +
         '<td class="num-cell">' + esc(amt2) + '</td>' +
-        '<td class="status-cell" style="color:' + r.colorHex + '" title="' + esc(r.note || '') + '">' + esc(r.status) + '</td>' +
+        '<td style="max-width:260px;"><div class="status-cell" style="color:' + r.colorHex + '">' + esc(r.status) + '</div>' + (r.note ? ('<div class="status-detail">' + esc(r.note) + '</div>') : '') + '</td>' +
         '<td>' + trashCell + '</td>' +
         '</tr>';
     });
